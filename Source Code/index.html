@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>index</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="lib/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="lib/css/bootstrap-icons.css">
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="lib/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/layout.css">
+
+    <!-- Mediapipe Pose JS -->
+    <script src="lib/js/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="lib/js/control_utils.js" crossorigin="anonymous"></script>
+    <script src="lib/js/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="lib/js/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.1/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.2/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.2/pose.js" crossorigin="anonymous"></script>
+
+
+    <!-- 引入ONNX库 -->
+    <script src="lib/js/onnx.min.js"></script>
+
+    <!-- 引入 d3 文件 -->
+    <script src="lib/js/d3.v7.min.js"></script>
+
+    <!-- 引入 ECharts 文件和ECharts GL库 -->
+    <script type="text/javascript" src="lib/js/echarts.min.js"></script>
+    <script type="text/javascript" src="lib/js/echarts-gl.min.js"></script>
+
+    <!-- 引入 html2canvas -->
+    <script src="lib/js/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="container-fluid mb-2">
+    <div class="row g-2">
+        <!-- 标题栏 -->
+        <div class="col-md-12">
+            <div class="border rounded navbar-custom bg-navbar">
+                RescueRadar: Interactive Real-Time Instruction and Visualization for CPR Training
+            </div>
+        </div>
+
+        <!--左部:控制面板+主画面-->
+        <div class="col-md-7">
+            <div class="row g-2">
+                <!-- 控制面板 -->
+                <div class="col-md-3">
+                    <div class="card custom-card h-100 custom-card-shadow">
+                        <div class="custom-header bg-control-panel">
+                            Control Panel
+                        </div>
+                        <div class="card-body custom-card-body">
+                            <div class="d-flex justify-content-center flex-wrap">
+                                <!-- 源选择:无、摄像头、本地文件 -->
+                                <div class="m-2" id="imageSourceContainer">
+                                    <div class="container ">
+                                        <label class="text-center-label">Image Source</label>
+                                        <div class="btn-group btn-group-custom" role="group" aria-label="Mode Toggle">
+                                            <button type="button" class="btn btn-custom-unselected" id="selectCamera">Camera</button>
+                                            <button type="button" class="btn btn-custom-selected" id="selectFile">File</button>
+                                        </div>
+                                    </div>
+                                    <!--
+                                    <label for="imageSource" class="form-label">Image Source</label>
+                                    <select id="imageSource" class="form-select">
+                                        <option value="none">None</option>
+                                        <option value="camera">Camera</option>
+                                        <option value="file">Local File</option>
+                                    </select>
+                                    -->
+                                </div>
+                                <!-- 源选择为本地文件时，文件选择 -->
+                                <div class="m-2" id="fileInputContainer">
+                                    <label for="file" class="form-label text-center-label">Select File</label>
+                                    <!-- 文件选择按钮 -->
+                                    <button type="button" class="btn btn-custom-file-select" id="fileSelectButton">
+                                        <i class="bi bi-file-earmark-arrow-up"></i> Select File
+                                    </button>
+                                    <!-- 隐藏的文件输入 -->
+                                    <input class="form-control" type="file" id="file" accept="video/*" style="display: none;">
+                                    <div class="form-text" id="fileName" style="text-align: center;">No file selected</div>
+                                </div>
+                                <!-- 显示内容选择:源图、处理图（多选处理效果） -->
+                                <div class="m-2" id="visualizationModeContainer">
+                                    <div class="mb-3">
+                                        <label class="form-label">Visualization Mode</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" id="originalImage" class="form-check-input" checked>
+                                            <label class="form-check-label" for="originalImage">Original Image</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" id="skeleton" class="form-check-input" checked>
+                                            <label class="form-check-label" for="skeleton">Skeleton</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" id="hull" class="form-check-input" checked>
+                                            <label class="form-check-label" for="hull">Hull</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--
+                                <div class="m-2" id="visualizationModeContainer">
+                                    <div class="mb-3">
+                                        <label class="form-label">Visualization Mode</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" id="originalImage" class="form-check-input" checked>
+                                            <label class="form-check-label" for="originalImage">Original Image</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" id="skeleton" class="form-check-input">
+                                            <label class="form-check-label" for="skeleton">Skeleton</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" id="hull" class="form-check-input">
+                                            <label class="form-check-label" for="skeleton">Hull</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                -->
+                                <!-- 角度单选 -->
+                                <div class="m-2" id="angelSelectContainer">
+                                    <div class="mb-3">
+                                        <label class="form-label">Angle Select</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="angleSelect" id="angle1" checked>
+                                            <label class="form-check-label" for="angle1">Angle1</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="angleSelect" id="angle2">
+                                            <label class="form-check-label" for="angle2">Angle2</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="angleSelect" id="angle3">
+                                            <label class="form-check-label" for="angle3">Angle3</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--
+                                <div class="m-2" id="chartSelectionContainer">
+                                    <div class="mb-3">
+                                        <label class="form-label">Data Chart Options</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" id="checkboxChart1" class="form-check-input">
+                                            <label class="form-check-label" for="checkboxChart1">Chart 1</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" id="checkboxChart2" class="form-check-input">
+                                            <label class="form-check-label" for="checkboxChart2">Chart 2</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                -->
+
+                                <!-- 角度范围选择 -->
+                                <div class="m-2" id="angle1range" style="display: none;">
+                                    <div id="rangeValues">
+                                        <span id="angleName">Angle1</span> Range : <span id="minValue">20</span>° - <span id="maxValue">80</span>°
+                                    </div>
+                                    <div class="range-slider">
+                                        <label for="minRange" class="form-label">Min：</label>
+                                        <input type="range" class="form-range" id="minRange">
+                                    </div>
+                                    <div class="range-slider">
+                                        <label for="maxRange" class="form-label">Max：</label>
+                                        <input type="range" class="form-range" id="maxRange">
+                                    </div>
+                                </div>
+
+                                <!-- 录制按钮 -->
+                                <div class="m-2" id="RecordContainer">
+                                    <button id="startButton" class="btn btn-start" disabled>Record</button>
+                                    <button id="stopButton" class="btn btn-stop" disabled>Stop</button>
+                                </div>
+
+
+                                <div class="m-2">
+                                    <button type="button" class="btn btn-start" onclick="showLargeModal()">Summary report</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 显示画面 -->
+                <div class="col-md-9">
+                    <div class="row g-2">
+                        <!-- 第一行主画面和3D骨骼图 -->
+                        <div class="col-md-7">
+                            <div class="card custom-card h-100 custom-card-shadow">
+                                <div class="custom-header bg-output-canvas">
+                                    Output Image
+                                </div>
+                                <div class="card-body custom-card-body">
+                                    <!-- 画面 -->
+                                    <div class="video-container ratio ratio-4x3" id="videoContainer">
+                                        <canvas id="outputCanvas"></canvas>
+                                    </div>
+                                    <!-- 视频控件 -->
+                                    <div class="d-flex align-items-center mt-2">
+                                        <button id="playPauseBtn" class="btn btn-video" disabled>
+                                            <i class="bi bi-play-fill"></i> <!-- 默认显示播放图标 -->
+                                        </button>
+                                        <div class="progress flex-grow-1 mx-2">
+                                            <div id="videoProgress" class="progress-bar my-progress-bar" role="progressbar"></div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3D骨骼图 -->
+                        <div class="col-md-5">
+                            <div class="card custom-card h-100 custom-card-shadow">
+                                <div class="custom-header bg-skeleton-3d">
+                                    3D Skeleton
+                                </div>
+                                <div class="card-body custom-card-body">
+                                    <div id="skeletonContainer">
+                                        <div id="skeleton3D"></div>
+                                    </div>
+                                </div>
+                                <div class="p-2">
+                                    <p id="angleSelect">Now: Between the body and big arm</p>
+                                    <p id="angleSize">Current Angle Size：-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二行文字提示区 -->
+                        <div class="col-md-12">
+                            <div class="card custom-card h-100 custom-card-shadow">
+                                <div class="custom-header bg-text-panel">
+                                    Evaluation Panel
+                                </div>
+                                <div class="card-body custom-card-body">
+<!--                                    <h5 class="text-center-label" id="teachText" style="font-weight: bold; color: #FFA8A3;">-->
+<!--                                        Please raise your five fingers and press down on the roots of your palms.-->
+<!--                                    </h5>-->
+                                    <h5 class="text-center-label" id="teachText">
+                                        Please <span style="font-weight: bold;color: #FFA8A3;">rotate your arms inward</span> and straighten your arms.
+                                    </h5>
+
+                                    <div id="alertContainer" class="scroll-container scroll-container-text"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--右部:图表-->
+        <div class="col-md-5">
+            <div class="row g-2">
+                <div class="col-md-12">
+                    <div class="card custom-card h-100 custom-card-shadow">
+                        <div class="custom-header bg-chart">
+                            Chart Panel
+                        </div>
+                        <div class="card-body custom-card-body "> <!--scroll-container scroll-container-chart-->
+                            <div class="row g-2">
+                                <!-- 第一行:角度仪表 与 角度散点图 -->
+                                <div class="col-md-4" id="angle11">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Angle1
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart2" class="chart-container">
+                                                <svg width="400" height="200" id="chart2"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8" id="angle44">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Historical distribution of Angle1 (in degrees)
+                                        </div>
+                                        <div class="card-body custom-card-body custom-header-small">
+                                            <div id="containerChart7" class="chart-container">
+                                                <svg width="400" height="200" id="chart7"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4" id="angle22">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Angle2
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart3" class="chart-container">
+                                                <svg width="400" height="200" id="chart3"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8" id="angle55">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Historical distribution of Angle2 (in degrees)
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart9" class="chart-container">
+                                                <svg width="400" height="200" id="chart9"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4" id="angle33">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Angle3
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart4" class="chart-container">
+                                                <svg width="400" height="200" id="chart4"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8" id="angle66">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-angle-chart custom-header-small">
+                                            Historical distribution of Angle3 (in degrees)
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart10" class="chart-container">
+                                                <svg width="400" height="200" id="chart10"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 第二行:力模拟图/3D骨骼 与 按压示意图 -->
+                                <div class="col-md-4">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-collide-force custom-header-small">
+                                            Current Press Status
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="poseCanvasContainer">
+                                                <canvas id="poseCanvas"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-landmark-track custom-header-small">
+                                            Historical distribution of presses
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart1" class="chart-container h-100">
+                                                <svg width="400" height="200" id="chart1"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 第三行平行坐标系 -->
+
+                                <div class="col-md-12">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-parallel custom-header-small">
+                                            Consistency of press (in degrees)
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart8" class="chart-container">
+                                                <svg width="400" height="200" id="chart8"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 第三行:频率 与 成绩堆叠图 -->
+                                <div class="col-md-4">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-frequency custom-header-small">
+                                            Current Frequency
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart5" class="chart-container">
+                                                <svg width="400" height="200" id="chart5"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card custom-card h-100">
+                                        <div class="custom-header bg-score custom-header-small">
+                                            Overall Performance
+                                        </div>
+                                        <div class="card-body custom-card-body">
+                                            <div id="containerChart6" class="chart-container">
+                                                <svg width="400" height="200" id="chart6"></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模态弹窗 -->
+<div class="modal fade" id="largeModal" tabindex="-1" aria-labelledby="largeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="largeModalLabel">
+                    Summary report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body" id="report">
+                <div class="container-fluid mb-2">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="card custom-card h-100">
+                                <div class="custom-header bg-text-panel">
+                                    Final Data
+                                </div>
+                                <div class="card-body custom-card-body">
+                                    <div id="finalWord" class="p-2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 快照 -->
+                        <div class="col-md-4">
+                            <div class="card custom-card h-100">
+                                <div id="GOOD" class="custom-header bg-text-panel">
+                                    GOOD
+                                </div>
+                                <div class="card-body custom-card-body">
+                                    <div class="ratio ratio-4x3">
+                                        <canvas id="wellOutputCanvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card custom-card h-100">
+                                <div id="BAD" class="custom-header bg-text-panel">
+                                    BAD
+                                </div>
+                                <div class="card-body custom-card-body">
+                                    <div class="ratio ratio-4x3">
+                                        <canvas id="badOutputCanvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 热力图 -->
+                <div class="col-md-12">
+                    <div class="card custom-card h-100">
+                        <div class="custom-header bg-text-panel">
+                            HOT MAP
+                        </div>
+                        <div class="card-body custom-card-body">
+                            <div id="containerChart11" class="chart-container">
+                                <svg width="400" height="200" id="chart11"></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-start" onclick="saveAsImage()">Save Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 原画面（隐藏） -->
+<div class="col-md-12">
+    <div id="inputVideoContainer" style="display: none">
+        <video id="inputVideo" autoplay muted playsinline></video>
+    </div>
+</div>
+<audio id="audioPlayer" src="media/bg.mp3"></audio>
+
+<script>
+    // 角度范围
+    let minAngleRange1 = 40;
+    let minAngleRange2 = 140;
+    let minAngleRange3 = 80;
+    let maxAngleRange1 = 70;
+    let maxAngleRange2 = 180;
+    let maxAngleRange3 = 130;
+
+    const colorLow = '#fac87d';
+    const colorMid = '#9ED6F6';
+    const colorHigh = '#FFA8A3';
+    const colorNo = 'rgba(130,232,127,0.8)';
+
+    const colorFrequencyLow = '#73dccd';
+    const colorFrequencyHigh = '#45d0bd';
+    const colorFrequencyLow_low = '#fcd49e';
+    const colorFrequencyHigh_low = '#fac87d';
+    const colorFrequencyLow_mid = '#add9f3';
+    const colorFrequencyHigh_mid = '#9ED6F6';
+    const colorFrequencyLow_high = '#ffbcb8';
+    const colorFrequencyHigh_high = '#FFA8A3';
+
+    const colorAngleTitle = '#000000';
+
+    const colorPoseConnection = '#aacfe5';
+    const colorPosePosition = '#3888c07f';
+    const colorPoseAngelName = '#FFA8A3';
+    const colorPoseSelectConnection = '#FFA8A3';
+    const colorPoseSelectPosition = '#FFA8A3';
+
+    const colorScoreAngle1 = '#08336e';
+    const colorScoreAngle2 = '#3888c0';
+    const colorScoreAngle3 = '#aacfe5';
+    const colorScoreFrequency = '#d2e3f3';
+</script>
+<script type="text/javascript" src="js/finalReport.js"></script>
+<script type="text/javascript" src="js/teachCPR.js"></script>
+<script type="text/javascript" src="js/model.js"></script>
+<script type="text/javascript" src="js/pose.js"></script>
+<script type="text/javascript" src="js/inputImage.js"></script>
+<script type="text/javascript" src="js/outputImage.js"></script>
+<script type="text/javascript" src="js/landmarkTrack.js"></script>
+<script type="text/javascript" src="js/landmarkAngle.js"></script>
+<script type="text/javascript" src="js/frequency.js"></script>
+<script type="text/javascript" src="js/collideForce.js"></script>
+<script type="text/javascript" src="js/scoreboard.js"></script>
+<script type="text/javascript" src="js/parallel.js"></script>
+<script type="text/javascript" src="js/angleCount.js"></script>
+<script type="text/javascript" src="js/skeleton.js"></script>
+<script type="text/javascript" src="js/heatmap.js"></script>
+<script type="text/javascript" src="js/chart.js"></script>
+<script type="text/javascript" src="js/control.js"></script>
+<script type="text/javascript" src="js/outputVideoControl.js"></script>
+<script type="text/javascript" src="js/angleRangeControl.js"></script>
+<script>
+
+
+</script>
+</body>
+</html>

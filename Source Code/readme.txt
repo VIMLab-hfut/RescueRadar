@@ -1,0 +1,3 @@
+Open the "Source Code" folder, click on "index.html" to enter the system interface. 
+After entering the interface, you can select video input or file input in the left control panel. Video input can automatically start training, while file input requires clicking the blue play button below the video box to start training.
+The recommended display resolution for this project's webpage is 2560x1440; If the display resolution is 1920x1080, please zoom the browser to 75% and click the 'Refresh' button to make the page layout responsive and restore normal style.
